@@ -4,7 +4,7 @@
 
 const CONFIG = {
     // URL Google Apps Script Anda yang sudah di-deploy
-    API_URL: 'https://script.google.com/macros/s/AKfycbwTJgvmRPR8ycMjrg5nbRIyka6C4z213AoCIACYUPuDG-wj4toUDMtOIoKuFPjoFRSt/exec',
+    API_URL: 'https://script.google.com/macros/s/AKfycbzm6W28cxdi9XnJJSWmHdy6gtSdDj-UQJimzqkVSYvHyDwzULqNmO4MSQ6KHkYpDRpU/exec',
     
     // UBAH MENJADI true UNTUK MENGGUNAKAN DATABASE SPREADSHEET!
     USE_API: true
@@ -14,4 +14,5 @@ const CONFIG = {
 function isValidApiUrl() {
     return CONFIG.USE_API === true && CONFIG.API_URL && CONFIG.API_URL !== 'PLACEHOLDER';
 }
+
 
