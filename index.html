@@ -461,37 +461,52 @@
 
         // Load daftar kelas
         async function loadClasses() {
+            // Demo data
+            const demoClasses = [
+                { ClassID: 'C001', ClassName: 'X-RPL', DayOfWeek: 'Senin', StartTime: '07:00', Teacher: 'Pak Budi' },
+                { ClassID: 'C002', ClassName: 'XI-TKJ', DayOfWeek: 'Selasa', StartTime: '08:00', Teacher: 'Bu Ani' }
+            ];
+
+            const classList = document.getElementById('classList');
+            
             try {
-                // Demo data
-                const demoClasses = [
-                    { ClassID: 'C001', ClassName: 'X-RPL', DayOfWeek: 'Senin', StartTime: '07:00', Teacher: 'Pak Budi' },
-                    { ClassID: 'C002', ClassName: 'XI-TKJ', DayOfWeek: 'Selasa', StartTime: '08:00', Teacher: 'Bu Ani' }
-                ];
-
-                const classList = document.getElementById('classList');
-                classList.innerHTML = demoClasses.map(cls => `
-                    <div class="class-item" onclick="selectClass('${cls.ClassID}', '${cls.ClassName}')">
-                        <strong>${cls.ClassName}</strong><br>
-                        <small>${cls.DayOfWeek} | ${cls.StartTime} | ${cls.Teacher}</small>
-                    </div>
-                `).join('');
-
-                // Load dari API jika tersedia
-                if (CONFIG.API_URL !== 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
+                // Cek apakah API URL valid (bukan placeholder)
+                const isValidApiUrl = CONFIG.API_URL && 
+                    CONFIG.API_URL !== 'https://script.google.com/macros/s/AKfycbzz1IMlpzn9G-WVoAf9rl78KmiUYJX9SzT2yGZBItNU85KVLYxDonWbSDWRq8s0fk2b/exec';
+                
+                if (isValidApiUrl) {
                     const response = await fetch(`${CONFIG.API_URL}?action=getClasses`);
+                    if (!response.ok) throw new Error('API response not ok');
                     const data = await response.json();
-                    if (data.classes) {
+                    if (data.classes && data.classes.length > 0) {
                         classList.innerHTML = data.classes.map(cls => `
                             <div class="class-item" onclick="selectClass('${cls.ClassID}', '${cls.ClassName}')">
                                 <strong>${cls.ClassName}</strong><br>
                                 <small>${cls.DayOfWeek} | ${cls.StartTime} | ${cls.Teacher}</small>
                             </div>
                         `).join('');
+                        return;
                     }
                 }
+                
+                // Gunakan demo data jika API tidak valid atau gagal
+                classList.innerHTML = demoClasses.map(cls => `
+                    <div class="class-item" onclick="selectClass('${cls.ClassID}', '${cls.ClassName}')">
+                        <strong>${cls.ClassName}</strong><br>
+                        <small>${cls.DayOfWeek} | ${cls.StartTime} | ${cls.Teacher}</small>
+                    </div>
+                `).join('');
+                
             } catch (error) {
                 console.error('Error loading classes:', error);
-                showAlert('Gagal memuat data kelas. Menggunakan data demo.', 'error');
+                // Gunakan demo data sebagai fallback
+                classList.innerHTML = demoClasses.map(cls => `
+                    <div class="class-item" onclick="selectClass('${cls.ClassID}', '${cls.ClassName}')">
+                        <strong>${cls.ClassName}</strong><br>
+                        <small>${cls.DayOfWeek} | ${cls.StartTime} | ${cls.Teacher}</small>
+                    </div>
+                `).join('');
+                showAlert('Menggunakan data demo karena gagal terhubung ke API.', 'warning');
             }
         }
 
@@ -499,42 +514,57 @@
         async function selectClass(classId, className) {
             currentClassId = classId;
             
+            // Demo data
+            const demoStudents = Array.from({length: 6}, (_, i) => ({
+                StudentID: `S${String(i+1).padStart(3, '0')}`,
+                Name: `Siswa ${i+1}`,
+                ClassID: classId,
+                NIS: `20240${i+1}`
+            }));
+
+            const studentList = document.getElementById('studentList');
+            const students = document.getElementById('students');
+            
+            studentList.style.display = 'block';
+            
             try {
-                // Demo data
-                const demoStudents = Array.from({length: 6}, (_, i) => ({
-                    StudentID: `S${String(i+1).padStart(3, '0')}`,
-                    Name: `Siswa ${i+1}`,
-                    ClassID: classId,
-                    NIS: `20240${i+1}`
-                }));
-
-                const studentList = document.getElementById('studentList');
-                const students = document.getElementById('students');
+                // Cek apakah API URL valid (bukan placeholder)
+                const isValidApiUrl = CONFIG.API_URL && 
+                    CONFIG.API_URL !== 'https://script.google.com/macros/s/AKfycbzz1IMlpzn9G-WVoAf9rl78KmiUYJX9SzT2yGZBItNU85KVLYxDonWbSDWRq8s0fk2b/exec';
                 
-                studentList.style.display = 'block';
-                students.innerHTML = demoStudents.map(student => `
-                    <div class="student-item" onclick="openRecordModal('${student.StudentID}', '${student.Name}')">
-                        <strong>${student.Name}</strong> - NIS: ${student.NIS}
-                    </div>
-                `).join('');
-
-                // Load dari API jika tersedia
-                if (CONFIG.API_URL !== 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
+                if (isValidApiUrl) {
                     const response = await fetch(`${CONFIG.API_URL}?action=getStudents&classId=${classId}`);
+                    if (!response.ok) throw new Error('API response not ok');
                     const data = await response.json();
-                    if (data.students) {
+                    if (data.students && data.students.length > 0) {
                         students.innerHTML = data.students.map(student => `
                             <div class="student-item" onclick="openRecordModal('${student.StudentID}', '${student.Name}')">
                                 <strong>${student.Name}</strong> - NIS: ${student.NIS}
                             </div>
                         `).join('');
+                        updateKPI(classId);
+                        return;
                     }
                 }
-
+                
+                // Gunakan demo data jika API tidak valid atau gagal
+                students.innerHTML = demoStudents.map(student => `
+                    <div class="student-item" onclick="openRecordModal('${student.StudentID}', '${student.Name}')">
+                        <strong>${student.Name}</strong> - NIS: ${student.NIS}
+                    </div>
+                `).join('');
                 updateKPI(classId);
+                
             } catch (error) {
                 console.error('Error loading students:', error);
-                showAlert('Gagal memuat data siswa.', 'error');
+                // Gunakan demo data sebagai fallback
+                students.innerHTML = demoStudents.map(student => `
+                    <div class="student-item" onclick="openRecordModal('${student.StudentID}', '${student.Name}')">
+                        <strong>${student.Name}</strong> - NIS: ${student.NIS}
+                    </div>
+                `).join('');
+                updateKPI(classId);
+                showAlert('Menggunakan data demo siswa karena gagal terhubung ke API.', 'warning');
             }
         }
 
@@ -546,10 +576,14 @@
             document.getElementById('kpiPushup').textContent = '25';
             document.getElementById('kpiSitup').textContent = '30';
 
-            // Load dari API jika tersedia
-            if (CONFIG.API_URL !== 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
-                try {
+            try {
+                // Cek apakah API URL valid (bukan placeholder)
+                const isValidApiUrl = CONFIG.API_URL && 
+                    CONFIG.API_URL !== 'https://script.google.com/macros/s/AKfycbzz1IMlpzn9G-WVoAf9rl78KmiUYJX9SzT2yGZBItNU85KVLYxDonWbSDWRq8s0fk2b/exec';
+                
+                if (isValidApiUrl) {
                     const response = await fetch(`${CONFIG.API_URL}?action=getDashboard&classId=${classId}`);
+                    if (!response.ok) throw new Error('API response not ok');
                     const data = await response.json();
                     if (data.kpi) {
                         document.getElementById('kpiStudents').textContent = data.kpi.students || '0';
@@ -557,9 +591,10 @@
                         document.getElementById('kpiPushup').textContent = data.kpi.avgPushup || '-';
                         document.getElementById('kpiSitup').textContent = data.kpi.avgSitup || '-';
                     }
-                } catch (error) {
-                    console.error('Error loading KPI:', error);
                 }
+            } catch (error) {
+                console.error('Error loading KPI:', error);
+                // Tetap gunakan demo values
             }
         }
 
@@ -608,7 +643,7 @@
             };
 
             try {
-                if (CONFIG.API_URL !== 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
+                if (CONFIG.API_URL !== 'https://script.google.com/macros/s/AKfycbzz1IMlpzn9G-WVoAf9rl78KmiUYJX9SzT2yGZBItNU85KVLYxDonWbSDWRq8s0fk2b/exec') {
                     const response = await fetch(CONFIG.API_URL, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
