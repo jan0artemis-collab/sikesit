@@ -302,6 +302,12 @@
             color: #c53030;
         }
 
+        .alert.warning {
+            background: #fffaf0;
+            border-left: 4px solid #ed8936;
+            color: #c05621;
+        }
+
         .teacher-name {
             margin: 10px 0;
         }
@@ -440,12 +446,20 @@
 
     <script>
         // Konfigurasi - GANTI DENGAN URL GOOGLE APPS SCRIPT ANDA
+        // Atau gunakan file config.js terpisah
         const CONFIG = {
             API_URL: 'https://script.google.com/macros/s/AKfycbzuUUh6AAT4KefYkCYzEZ5VU-ne8dzK5qHgZoXOHPn3L0idGE1Oh8Ds5FEB6WYqs-wI/exec',
         };
 
         let currentStudentId = null;
         let currentClassId = null;
+
+        // Validasi API URL
+        function isApiConfigValid() {
+            return CONFIG.API_URL && 
+                   !CONFIG.API_URL.includes('YOUR_DEPLOYMENT_ID') &&
+                   CONFIG.API_URL.includes('script.google.com');
+        }
 
         // Update waktu sekarang
         function updateDateTime() {
@@ -470,11 +484,7 @@
             const classList = document.getElementById('classList');
             
             try {
-                // Cek apakah API URL valid (bukan placeholder)
-                const isValidApiUrl = CONFIG.API_URL && 
-                    CONFIG.API_URL !== 'https://script.google.com/macros/s/AKfycbzz1IMlpzn9G-WVoAf9rl78KmiUYJX9SzT2yGZBItNU85KVLYxDonWbSDWRq8s0fk2b/exec';
-                
-                if (isValidApiUrl) {
+                if (isApiConfigValid()) {
                     const response = await fetch(`${CONFIG.API_URL}?action=getClasses`);
                     if (!response.ok) throw new Error('API response not ok');
                     const data = await response.json();
@@ -528,11 +538,7 @@
             studentList.style.display = 'block';
             
             try {
-                // Cek apakah API URL valid (bukan placeholder)
-                const isValidApiUrl = CONFIG.API_URL && 
-                    CONFIG.API_URL !== 'https://script.google.com/macros/s/AKfycbzz1IMlpzn9G-WVoAf9rl78KmiUYJX9SzT2yGZBItNU85KVLYxDonWbSDWRq8s0fk2b/exec';
-                
-                if (isValidApiUrl) {
+                if (isApiConfigValid()) {
                     const response = await fetch(`${CONFIG.API_URL}?action=getStudents&classId=${classId}`);
                     if (!response.ok) throw new Error('API response not ok');
                     const data = await response.json();
@@ -577,11 +583,7 @@
             document.getElementById('kpiSitup').textContent = '30';
 
             try {
-                // Cek apakah API URL valid (bukan placeholder)
-                const isValidApiUrl = CONFIG.API_URL && 
-                    CONFIG.API_URL !== 'https://script.google.com/macros/s/AKfycbzz1IMlpzn9G-WVoAf9rl78KmiUYJX9SzT2yGZBItNU85KVLYxDonWbSDWRq8s0fk2b/exec';
-                
-                if (isValidApiUrl) {
+                if (isApiConfigValid()) {
                     const response = await fetch(`${CONFIG.API_URL}?action=getDashboard&classId=${classId}`);
                     if (!response.ok) throw new Error('API response not ok');
                     const data = await response.json();
@@ -643,30 +645,35 @@
             };
 
             try {
-                if (CONFIG.API_URL !== 'https://script.google.com/macros/s/AKfycbzz1IMlpzn9G-WVoAf9rl78KmiUYJX9SzT2yGZBItNU85KVLYxDonWbSDWRq8s0fk2b/exec') {
+                if (isApiConfigValid()) {
+                    // Kirim ke API yang sebenarnya
+                    showAlert('Menyimpan data...', 'success');
                     const response = await fetch(CONFIG.API_URL, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'saveMeasurement', data: measurement })
+                        body: JSON.stringify({ action: 'saveMeasurement', data: measurement }),
+                        timeout: CONFIG.REQUEST_TIMEOUT
                     });
+                    
+                    if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    
                     const result = await response.json();
                     
                     if (result.success) {
-                        showAlert('Data berhasil disimpan!', 'success');
+                        showAlert('✅ Data berhasil disimpan ke database!', 'success');
                         closeModal();
-                        updateKPI(currentClassId);
+                        setTimeout(() => updateKPI(currentClassId), 500);
                     } else {
-                        showAlert('Gagal menyimpan data: ' + result.error, 'error');
+                        showAlert('❌ Gagal menyimpan: ' + (result.error || 'Unknown error'), 'error');
                     }
                 } else {
-                    // Demo mode
-                    console.log('Measurement saved (demo):', measurement);
-                    showAlert('Data tersimpan (mode demo). Hubungkan dengan Google Apps Script untuk menyimpan ke Spreadsheet.', 'success');
-                    closeModal();
+                    // Mode demo - API belum dikonfigurasi
+                    console.log('📝 Measurement (demo mode):', measurement);
+                    showAlert('⚠️ Mode Demo: API belum dikonfigurasi. Data tidak disimpan ke database.\n\nHubungi admin untuk setup Google Apps Script.', 'error');
                 }
             } catch (error) {
                 console.error('Error saving measurement:', error);
-                showAlert('Error: ' + error.message, 'error');
+                showAlert('❌ Error: ' + error.message, 'error');
             }
         }
 
@@ -679,8 +686,19 @@
             setTimeout(() => alert.style.display = 'none', 5000);
         }
 
+        // Validasi API URL
+        function isApiConfigValid() {
+            return CONFIG.API_URL && 
+                   !CONFIG.API_URL.includes('YOUR_DEPLOYMENT_ID') &&
+                   CONFIG.API_URL.includes('script.google.com');
+        }
+
         // Initialize
         window.onload = function() {
+            if (!isApiConfigValid()) {
+                console.warn('⚠️ API URL tidak dikonfigurasi dengan benar. Menggunakan mode demo.');
+                showAlert('⚠️ API belum dikonfigurasi. Hubungi admin untuk setup Google Apps Script.', 'error');
+            }
             loadClasses();
             // Load saved teacher name if exists
             const savedName = localStorage.getItem('teacherName');
