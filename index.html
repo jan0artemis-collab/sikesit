@@ -627,11 +627,10 @@
 
             try {
                 if (isValidApiUrl()) {
-                    // Kirim ke API dengan CORS mode
+                    // Kirim ke API - gunakan POST tanpa CORS mode untuk menghindari preflight
                     const response = await fetch(CONFIG.API_URL, {
                         method: 'POST',
-                        mode: 'cors',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 'Content-Type': 'text/plain' }, // Text plain untuk menghindari preflight
                         body: JSON.stringify({ action: 'saveMeasurement', data: measurement })
                     });
                     
