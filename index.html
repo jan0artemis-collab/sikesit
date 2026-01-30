@@ -302,12 +302,6 @@
             color: #c53030;
         }
 
-        .alert.warning {
-            background: #fffaf0;
-            border-left: 4px solid #ed8936;
-            color: #c05621;
-        }
-
         .teacher-name {
             margin: 10px 0;
         }
@@ -444,22 +438,12 @@
         </div>
     </div>
 
+    <script src="config.js"></script>
     <script>
-        // Konfigurasi - GANTI DENGAN URL GOOGLE APPS SCRIPT ANDA
-        // Atau gunakan file config.js terpisah
-        const CONFIG = {
-            API_URL: 'https://script.google.com/macros/s/AKfycbzuUUh6AAT4KefYkCYzEZ5VU-ne8dzK5qHgZoXOHPn3L0idGE1Oh8Ds5FEB6WYqs-wI/exec',
-        };
-
+        // Status untuk demo mode
+        let demoMeasurements = [];
         let currentStudentId = null;
         let currentClassId = null;
-
-        // Validasi API URL
-        function isApiConfigValid() {
-            return CONFIG.API_URL && 
-                   !CONFIG.API_URL.includes('YOUR_DEPLOYMENT_ID') &&
-                   CONFIG.API_URL.includes('script.google.com');
-        }
 
         // Update waktu sekarang
         function updateDateTime() {
@@ -484,7 +468,7 @@
             const classList = document.getElementById('classList');
             
             try {
-                if (isApiConfigValid()) {
+                if (isValidApiUrl()) {
                     const response = await fetch(`${CONFIG.API_URL}?action=getClasses`);
                     if (!response.ok) throw new Error('API response not ok');
                     const data = await response.json();
@@ -499,7 +483,7 @@
                     }
                 }
                 
-                // Gunakan demo data jika API tidak valid atau gagal
+                // Gunakan demo data
                 classList.innerHTML = demoClasses.map(cls => `
                     <div class="class-item" onclick="selectClass('${cls.ClassID}', '${cls.ClassName}')">
                         <strong>${cls.ClassName}</strong><br>
@@ -509,7 +493,6 @@
                 
             } catch (error) {
                 console.error('Error loading classes:', error);
-                // Gunakan demo data sebagai fallback
                 classList.innerHTML = demoClasses.map(cls => `
                     <div class="class-item" onclick="selectClass('${cls.ClassID}', '${cls.ClassName}')">
                         <strong>${cls.ClassName}</strong><br>
@@ -538,7 +521,7 @@
             studentList.style.display = 'block';
             
             try {
-                if (isApiConfigValid()) {
+                if (isValidApiUrl()) {
                     const response = await fetch(`${CONFIG.API_URL}?action=getStudents&classId=${classId}`);
                     if (!response.ok) throw new Error('API response not ok');
                     const data = await response.json();
@@ -553,7 +536,7 @@
                     }
                 }
                 
-                // Gunakan demo data jika API tidak valid atau gagal
+                // Gunakan demo data
                 students.innerHTML = demoStudents.map(student => `
                     <div class="student-item" onclick="openRecordModal('${student.StudentID}', '${student.Name}')">
                         <strong>${student.Name}</strong> - NIS: ${student.NIS}
@@ -563,7 +546,6 @@
                 
             } catch (error) {
                 console.error('Error loading students:', error);
-                // Gunakan demo data sebagai fallback
                 students.innerHTML = demoStudents.map(student => `
                     <div class="student-item" onclick="openRecordModal('${student.StudentID}', '${student.Name}')">
                         <strong>${student.Name}</strong> - NIS: ${student.NIS}
@@ -583,7 +565,7 @@
             document.getElementById('kpiSitup').textContent = '30';
 
             try {
-                if (isApiConfigValid()) {
+                if (isValidApiUrl()) {
                     const response = await fetch(`${CONFIG.API_URL}?action=getDashboard&classId=${classId}`);
                     if (!response.ok) throw new Error('API response not ok');
                     const data = await response.json();
@@ -596,7 +578,6 @@
                 }
             } catch (error) {
                 console.error('Error loading KPI:', error);
-                // Tetap gunakan demo values
             }
         }
 
@@ -645,35 +626,34 @@
             };
 
             try {
-                if (isApiConfigValid()) {
-                    // Kirim ke API yang sebenarnya
-                    showAlert('Menyimpan data...', 'success');
+                if (isValidApiUrl()) {
+                    // Kirim ke API
                     const response = await fetch(CONFIG.API_URL, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'saveMeasurement', data: measurement }),
-                        timeout: CONFIG.REQUEST_TIMEOUT
+                        body: JSON.stringify({ action: 'saveMeasurement', data: measurement })
                     });
-                    
-                    if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                    
                     const result = await response.json();
                     
                     if (result.success) {
-                        showAlert('✅ Data berhasil disimpan ke database!', 'success');
+                        showAlert('✓ Data berhasil disimpan!', 'success');
                         closeModal();
-                        setTimeout(() => updateKPI(currentClassId), 500);
+                        updateKPI(currentClassId);
                     } else {
-                        showAlert('❌ Gagal menyimpan: ' + (result.error || 'Unknown error'), 'error');
+                        showAlert('Gagal menyimpan: ' + (result.error || 'Unknown error'), 'error');
                     }
                 } else {
-                    // Mode demo - API belum dikonfigurasi
-                    console.log('📝 Measurement (demo mode):', measurement);
-                    showAlert('⚠️ Mode Demo: API belum dikonfigurasi. Data tidak disimpan ke database.\n\nHubungi admin untuk setup Google Apps Script.', 'error');
+                    // Demo mode - simpan ke localStorage
+                    demoMeasurements.push(measurement);
+                    localStorage.setItem('demoMeasurements', JSON.stringify(demoMeasurements));
+                    console.log('Data tersimpan (demo):', measurement);
+                    showAlert('✓ Data tersimpan (mode demo)', 'success');
+                    closeModal();
+                    updateKPI(currentClassId);
                 }
             } catch (error) {
                 console.error('Error saving measurement:', error);
-                showAlert('❌ Error: ' + error.message, 'error');
+                showAlert('Error: ' + error.message, 'error');
             }
         }
 
@@ -686,20 +666,16 @@
             setTimeout(() => alert.style.display = 'none', 5000);
         }
 
-        // Validasi API URL
-        function isApiConfigValid() {
-            return CONFIG.API_URL && 
-                   !CONFIG.API_URL.includes('YOUR_DEPLOYMENT_ID') &&
-                   CONFIG.API_URL.includes('script.google.com');
-        }
-
         // Initialize
         window.onload = function() {
-            if (!isApiConfigValid()) {
-                console.warn('⚠️ API URL tidak dikonfigurasi dengan benar. Menggunakan mode demo.');
-                showAlert('⚠️ API belum dikonfigurasi. Hubungi admin untuk setup Google Apps Script.', 'error');
+            // Load demo measurements dari localStorage
+            const saved = localStorage.getItem('demoMeasurements');
+            if (saved) {
+                demoMeasurements = JSON.parse(saved);
             }
+            
             loadClasses();
+            
             // Load saved teacher name if exists
             const savedName = localStorage.getItem('teacherName');
             if (savedName) {
