@@ -1,22 +1,19 @@
-// Konfigurasi Aplikasi
-// GANTI URL_DEPLOYMENT_ID DENGAN ID DARI GOOGLE APPS SCRIPT ANDA
+// ========================================
+// KONFIGURASI APLIKASI PENCATAT KEBUGARAN
+// ========================================
 
 const CONFIG = {
-    // Paste URL Google Apps Script Anda di sini
-    // Format: https://script.google.com/macros/s/[DEPLOYMENT_ID]/exec
-    // Contoh: https://script.google.com/macros/s/AKfycbw123XYZ/exec
-    API_URL: 'https://script.google.com/macros/s/AKfycbzuUUh6AAT4KefYkCYzEZ5VU-ne8dzK5qHgZoXOHPn3L0idGE1Oh8Ds5FEB6WYqs-wI/exec',
+    // Ganti URL di bawah dengan URL Google Apps Script Anda yang sudah di-deploy
+    // Format: https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec
+    API_URL: 'https://script.google.com/macros/s/AKfycbzz1IMlpzn9G-WVoAf9rl78KmiUYJX9SzT2yGZBItNU85KVLYxDonWbSDWRq8s0fk2b/exec',
     
-    // Timeout untuk request (dalam ms)
-    REQUEST_TIMEOUT: 10000,
-    
-    // Debug mode
-    DEBUG: true
+    // Set ini ke true jika Anda ingin menggunakan API
+    // Set ke false untuk menggunakan demo mode
+    USE_API: false
 };
 
-// Log konfigurasi jika debug aktif
-if (CONFIG.DEBUG) {
-    console.log('=== Konfigurasi Aplikasi ===');
-    console.log('API URL:', CONFIG.API_URL);
-    console.log('API Valid:', CONFIG.API_URL && !CONFIG.API_URL.includes('YOUR_DEPLOYMENT_ID'));
+// Fungsi untuk mengecek apakah API URL valid (bukan placeholder)
+function isValidApiUrl() {
+    return CONFIG.USE_API && CONFIG.API_URL && 
+           CONFIG.API_URL !== 'https://script.google.com/macros/s/AKfycbzz1IMlpzn9G-WVoAf9rl78KmiUYJX9SzT2yGZBItNU85KVLYxDonWbSDWRq8s0fk2b/exec';
 }
