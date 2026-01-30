@@ -627,16 +627,25 @@
 
             try {
                 if (isValidApiUrl()) {
-                    // Kirim ke API
+                    // Kirim ke API dengan CORS mode
                     const response = await fetch(CONFIG.API_URL, {
                         method: 'POST',
+                        mode: 'cors',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ action: 'saveMeasurement', data: measurement })
                     });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
                     const result = await response.json();
                     
                     if (result.success) {
-                        showAlert('✓ Data berhasil disimpan!', 'success');
+                        showAlert('✓ Data berhasil disimpan ke Spreadsheet!', 'success');
+                        // Simpan juga ke localStorage untuk backup
+                        demoMeasurements.push(measurement);
+                        localStorage.setItem('demoMeasurements', JSON.stringify(demoMeasurements));
                         closeModal();
                         updateKPI(currentClassId);
                     } else {
@@ -653,7 +662,7 @@
                 }
             } catch (error) {
                 console.error('Error saving measurement:', error);
-                showAlert('Error: ' + error.message, 'error');
+                showAlert('⚠️ Gagal: ' + error.message + '. Periksa Console (F12) untuk detail error.', 'error');
             }
         }
 
